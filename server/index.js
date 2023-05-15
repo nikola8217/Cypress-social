@@ -1,6 +1,5 @@
 import express from "express";
 import bodyParser from "body-parser";
-import mongoose from "mongoose";
 import connectDB from "./config/db.js"; 
 import cors from "cors";
 import dotenv from "dotenv";
@@ -11,6 +10,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { registerUser } from "./controllers/authController.js";
 import authRoutes from './routes/authRoutes.js';
+import { createPost } from "./controllers/postController.js";
+import { protect } from "./middleware/authMiddleware.js";
+import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 
 /* CONFIGURATIONS */
 const __filename = fileURLToPath(import.meta.url);
@@ -40,7 +42,12 @@ const upload = multer({ storage });
 
 /* ROUTES */
 app.post("/auth/register", upload.single("picture"), registerUser);
+app.post("/posts", protect, upload.single("picture"), createPost);
+
 app.use("/auth", authRoutes);
+
+app.use(notFound)
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000
 
