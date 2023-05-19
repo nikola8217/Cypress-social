@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Box,
   Button,
@@ -6,33 +6,11 @@ import {
   useMediaQuery,
   Typography,
   useTheme,
+  Avatar
 } from "@mui/material";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
-import { Formik } from "formik";
-import * as yup from "yup";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import Dropzone from "react-dropzone";
-import FlexBetween from "../other/FlexBetween";
-
-const registerSchema = yup.object().shape({
-  name: yup.string().required("required"),
-  email: yup.string().email("invalid email").required("required"),
-  password: yup.string().required("required"),
-  passConfirm: yup.string().required("required"),
-  location: yup.string().required("required"),
-  occupation: yup.string().required("required"),
-  picture: yup.string().required("required"),
-});
-
-const initialValuesRegister = {
-    name: "",
-    email: "",
-    password: "",
-    passConfirm: "",
-    location: "",
-    occupation: "",
-};
+import { useDispatch, useSelector } from "react-redux";
+import { register } from "../../redux/actions/userActions";
 
 
 const RegisterForm = () => {
@@ -42,32 +20,65 @@ const RegisterForm = () => {
   const navigate = useNavigate();
   const isNonMobile = useMediaQuery("(min-width:600px)");
 
+  const [userImage, setUserImage] = useState('img/default.jpg');
+  const inputRef = useRef(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passConfirm, setPassConfirm] = useState("");
+  const [location, setLocation] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [about, setAbout] = useState("");
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const { loading, success, error } = useSelector(state => state.userRegister);
+  const { userAccount } = useSelector(state => state.userLogin);
+
+  useEffect(() => {
+    if (userAccount) {
+      navigate('/');
+    } else {
+      if (success) {
+        setSuccessMessage(`Welcome ${name}!`);
+        setTimeout(() => {
+            dispatch({ type: 'USER_REGISTER_RESET' });
+            navigate('/login');
+        }, 1000);
+      }
+    }
+  }, [navigate, userAccount, success]);
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+  
+        reader.onload = (e) => {
+          setUserImage(e.target.result);
+        };
+  
+        reader.readAsDataURL(file);
+      }
+  };
+
+  const handleImageClick = () => {
+    inputRef.current.click();
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    dispatch(register(name, email, password, passConfirm, userImage, location, occupation, about))
+  };
+
   const handleNavigate = () => {
     navigate('/login');
   };
 
-  const handleFormSubmit = async (values, onSubmitProps) => {
-   
-  };
 
   return (
-    <Formik
-      onSubmit={handleFormSubmit}
-      initialValues={initialValuesRegister}
-      validationSchema={registerSchema}
-    >
-      {({
-        values,
-        errors,
-        touched,
-        handleBlur,
-        handleChange,
-        handleSubmit,
-        setFieldValue,
-        resetForm,
-      }) => (
+    <>
         <form onSubmit={handleSubmit}>
-          <Box
+            <Box
             display="grid"
             gap="30px"
             gridTemplateColumns="repeat(4, minmax(0, 1fr))"
@@ -77,12 +88,9 @@ const RegisterForm = () => {
           >
             <TextField
                 label="Name"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.name}
+                onChange={(e) => setName(e.target.value)}
+                value={name}
                 name="name"
-                error={Boolean(touched.name) && Boolean(errors.name)}
-                helperText={touched.name && errors.name}
                 sx={{ gridColumn: "span 2" }}
                 InputProps={{
                     style: { color: '#fff' },
@@ -94,12 +102,9 @@ const RegisterForm = () => {
             />
             <TextField
               label="Email"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              value={values.email}
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
               name="email"
-              error={Boolean(touched.email) && Boolean(errors.email)}
-              helperText={touched.email && errors.email}
               sx={{ gridColumn: "span 2" }}
               InputProps={{
                 style: { color: '#fff' },
@@ -112,12 +117,9 @@ const RegisterForm = () => {
             <TextField
               label="Password"
               type="password"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              value={values.password}
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
               name="password"
-              error={Boolean(touched.password) && Boolean(errors.password)}
-              helperText={touched.password && errors.password}
               sx={{ gridColumn: "span 2" }}
               InputProps={{
                 style: { color: '#fff' },
@@ -130,12 +132,9 @@ const RegisterForm = () => {
             <TextField
               label="Password Confirm"
               type="password"
-              onBlur={handleBlur}
-              onChange={handleChange}
-              value={values.passConfirm}
+              onChange={(e) => setPassConfirm(e.target.value)}
+              value={passConfirm}
               name="passConfirm"
-              error={Boolean(touched.passConfirm) && Boolean(errors.passConfirm)}
-              helperText={touched.passConfirm && errors.passConfirm}
               sx={{ gridColumn: "span 2" }}
               InputProps={{
                 style: { color: '#fff' },
@@ -145,47 +144,27 @@ const RegisterForm = () => {
                 style: { color: '#fff' },
               }}
             />
-            <Box
-                gridColumn="span 4"
-                border={`1px solid ${palette.neutral.medium}`}
-                borderRadius="5px"
-                p="1rem"
-            >
-                <Dropzone
-                acceptedFiles=".jpg,.jpeg,.png"
-                multiple={false}
-                onDrop={(acceptedFiles) =>
-                    setFieldValue("picture", acceptedFiles[0])
-                }
-                >
-                {({ getRootProps, getInputProps }) => (
-                    <Box
-                    {...getRootProps()}
-                    border={`2px dashed ${palette.primary.main}`}
-                    p="1rem"
-                    sx={{ "&:hover": { cursor: "pointer" } }}
-                    >
-                    <input {...getInputProps()} />
-                    {!values.picture ? (
-                        <p style={{ color: 'white' }}>Add Picture Here</p>
-                    ) : (
-                        <FlexBetween>
-                        <Typography>{values.picture.name}</Typography>
-                            <EditOutlinedIcon />
-                        </FlexBetween>
-                    )}
-                    </Box>
-                )}
-                </Dropzone>
+            <Box sx={{ gridColumn: "span 4", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <Avatar
+                    alt="User Image"
+                    src={userImage}
+                    sx={{ width: 100, height: 100, cursor: 'pointer' }}
+                    onClick={handleImageClick}
+                />
+                <input
+                    type="file"
+                    accept="image/*"
+                    ref={inputRef}
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                />
             </Box>
+            
             <TextField
                 label="Location"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.location}
+                onChange={(e) => setLocation(e.target.value)}
+                value={location}
                 name="location"
-                error={Boolean(touched.location) && Boolean(errors.location)}
-                helperText={touched.location && errors.location}
                 sx={{ gridColumn: "span 2" }}
                 InputProps={{
                     style: { color: '#fff' },
@@ -197,14 +176,9 @@ const RegisterForm = () => {
             />
             <TextField
                 label="Occupation"
-                onBlur={handleBlur}
-                onChange={handleChange}
-                value={values.occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+                value={occupation}
                 name="occupation"
-                error={
-                Boolean(touched.occupation) && Boolean(errors.occupation)
-                }
-                helperText={touched.occupation && errors.occupation}
                 sx={{ gridColumn: "span 2" }}
                 InputProps={{
                     style: { color: '#fff' },
@@ -214,11 +188,30 @@ const RegisterForm = () => {
                     style: { color: '#fff' },
                   }}
             />
+            <TextField
+                multiline 
+                rows={4} 
+                label="About you"
+                onChange={(e) => setAbout(e.target.value)}
+                value={about}
+                name="about"
+                sx={{ gridColumn: "span 4" }}
+                InputProps={{
+                    style: { color: '#fff' },
+                    placeholder: 'Tell us something about you',
+                  }}
+                  InputLabelProps={{
+                    style: { color: '#fff' },
+                  }}
+            />
             
           </Box>
 
-          <Box>
-          <Button
+          <Box display='flex' flexDirection='column' textAlign='center' mt={3}>
+            {loading && <Typography variant='p' textAlign={'center'} >Loading...</Typography>}
+            {error && <Typography variant='p' color={'red'} textAlign={'center'} >{error}</Typography>}
+            {successMessage && <Typography variant='p' color={'green'} textAlign={'center'}>{successMessage}</Typography>}
+            <Button
               fullWidth
               type="submit"
               sx={{
@@ -243,10 +236,9 @@ const RegisterForm = () => {
             >
                 Already have an account? Login here.
             </Typography>
-          </Box>
+          </Box>        
         </form>
-      )}
-    </Formik>
+    </>
   );
 };
 

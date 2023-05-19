@@ -18,7 +18,7 @@ export const login = (email, password) => async (dispatch) => {
             payload: data
         });
 
-        localStorage.setItem('userInfo', JSON.stringify(data));
+        localStorage.setItem('userAccount', JSON.stringify(data));
 
     } catch (error) {
         dispatch({
@@ -29,7 +29,7 @@ export const login = (email, password) => async (dispatch) => {
 };
 
 export const logout = () => (dispatch) => {
-    localStorage.removeItem('userInfo');
+    localStorage.removeItem('userAccount');
     dispatch({type: 'USER_LOGOUT'});
 };
 
@@ -39,11 +39,11 @@ export const register = (name, email, password, passConfirm, img, location, occu
 
         const config = {
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'multipart/form-data'
             }
         };
 
-        const { data } = await axios.post(`${baseURL}/auth/register`, {name, email, password, passConfirm, img, location, occupation, about}, config);
+        const { data } = await axios.post('http://localhost:5000/auth/register', {name, email, password, passConfirm, img, location, occupation, about}, config);
 
         dispatch({
             type: 'USER_REGISTER_SUCCESS',
@@ -51,9 +51,10 @@ export const register = (name, email, password, passConfirm, img, location, occu
         });
 
     } catch (error) {
+        console.log(error);
         dispatch({
             type: 'USER_REGISTER_FAIL',
-            payload: error.response && error.response.data.message ? error.response.data.message : error.message
+            payload: error.response.data.error
         });
     }
 };

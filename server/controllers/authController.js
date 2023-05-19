@@ -7,10 +7,10 @@ export const registerUser = async (req, res) => {
     const result = await register(req.body);
 
     if (result.error) {
-        res.status(400).json({ error: result.error });
-    } else {
-        res.status(201).json(result);
+        return res.status(400).json({ error: result.error });
     }
+
+    return res.status(201).json(result);
 
 };
 

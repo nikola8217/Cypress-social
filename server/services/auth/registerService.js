@@ -1,7 +1,7 @@
 import User from "../../models/User.js";
 import generateToken from "../../utils/generateToken.js";
 
-export const register = async (userData) => {
+export const register = async (data) => {
     const {
         name,
         email,
@@ -12,10 +12,10 @@ export const register = async (userData) => {
         location,
         occupation,
         about
-    } = userData;
+    } = data;
 
     if (name === '' || email === '' || password === '' || passConfirm === '' || location === '' || occupation === '' || about === '') {
-        return { error: 'You must fill in all fields' };
+        return { error: 'You must fill in all fields' }; 
     }
 
     if (password !== passConfirm) {
@@ -25,10 +25,10 @@ export const register = async (userData) => {
     const userExists = await User.findOne({ email });
 
     if (userExists) {
-        return { error: 'User already exists' };
+        return { error: "User already exists" };
     }
 
-    const user = new User({
+    const user = await User.create({
         name,
         email,
         password,
@@ -39,15 +39,17 @@ export const register = async (userData) => {
         about
     });
 
-    await user.save();
-
-    return {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        location: user.location,
-        occupation: user.occupation,
-        about: user.about,
-        token: generateToken(user._id)
-    };
+    if (user) {
+        return {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            location: user.location,
+            occupation: user.occupation,
+            about: user.about,
+            token: generateToken(user._id)
+        };
+    } else {
+        return { error: "Invalid user data" };
+    }
 };
